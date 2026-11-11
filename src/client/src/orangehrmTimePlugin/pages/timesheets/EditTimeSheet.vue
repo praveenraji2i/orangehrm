@@ -172,8 +172,13 @@ export default {
 
     const onSave = () => {
       state.isLoading = true;
+      // Rows without a project and activity are empty rows (validation lets
+      // them through); skip them so they do not block the valid rows.
+      const records = state.timesheetRecords.filter(
+        (record) => record.project && record.activity,
+      );
       const payload = {
-        entries: state.timesheetRecords.map((record) => {
+        entries: records.map((record) => {
           const dates = {};
           for (const date in record.dates) {
             const _duration = parseTimeInSeconds(record.dates[date].duration);
@@ -191,7 +196,7 @@ export default {
           .filter((record) => {
             if (!record.project) return false;
             return (
-              state.timesheetRecords.findIndex(
+              records.findIndex(
                 (item) =>
                   item.project.id === record.project.id &&
                   item.activity.id === record.activity.id,

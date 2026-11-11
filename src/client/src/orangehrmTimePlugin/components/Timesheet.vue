@@ -88,7 +88,7 @@
               <project-autocomplete
                 v-if="editable"
                 :only-allowed="false"
-                :rules="rules.project"
+                :rules="projectRules(record)"
                 :model-value="getProject(record)"
                 @update:model-value="updateProject($event, i)"
               />
@@ -103,7 +103,7 @@
             <td class="orangehrm-timesheet-table-body-cell">
               <activity-dropdown
                 v-if="editable"
-                :rules="rules.activity"
+                :rules="activityRules(record)"
                 :project-id="record.project && record.project.id"
                 :model-value="getActivity(record.activity)"
                 @update:model-value="updateActivity($event, i)"
@@ -288,18 +288,6 @@ export default {
       focusedField: null,
       showCommentModal: false,
       commentModalState: null,
-      rules: {
-        project: [
-          validSelection,
-          (v) => v !== null || this.$t('time.select_a_project'),
-        ],
-        activity: [
-          (v) => v !== null || this.$t('time.select_an_activity'),
-          (v) =>
-            this.records.filter((record) => record.activity?.id === v?.id)
-              .length < 2 || this.$t('time.duplicate_record'),
-        ],
-      },
     };
   },
 
@@ -357,6 +345,35 @@ export default {
   },
 
   methods: {
+    isEmptyRow(record) {
+      return (
+        !record.project &&
+        !record.activity &&
+        Object.values(record.dates).every((entry) => !entry?.duration)
+      );
+    },
+    projectRules(record) {
+      return [
+        validSelection,
+        (v) =>
+          v !== null ||
+          this.isEmptyRow(record) ||
+          this.$t('time.select_a_project'),
+      ];
+    },
+    activityRules(record) {
+      return [
+        (v) =>
+          v !== null ||
+          this.isEmptyRow(record) ||
+          this.$t('time.select_an_activity'),
+        (v) =>
+          v === null ||
+          this.records.filter((item) => item.activity?.id === v?.id).length <
+            2 ||
+          this.$t('time.duplicate_record'),
+      ];
+    },
     deleteRow(index) {
       const updated = this.records.filter((_, i) => i !== index);
       this.syncRecords(updated);
